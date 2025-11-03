@@ -37,13 +37,16 @@ def to_doc(c: Candidate) -> dict:
 def main():
     ap = argparse.ArgumentParser(description="Section 2: Filter candidates and write to MongoDB.")
     ap.add_argument("--url", default=DEFAULT_URL)
-    ap.add_argument("--industry", default=None, help='e.g. "finance"')
-    ap.add_argument("--skills", default=None, help='comma/semicolon-separated, e.g. "python,mongodb"')
+    ap.add_argument("--industry", default=None, help='e.g. "real estate", "education"')
+    ap.add_argument("--skills", default=None, help='comma/semicolon-separated, e.g. "quickbooks,payroll"')
     ap.add_argument("--min-years", type=float, default=None)
     ap.add_argument("--mongo", default="mongodb://localhost:27017")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--explain", action="store_true")
-    ap.add_argument("--show-n", type=int, default=0, help="Print first N matched candidate names")
+    ap.add_argument("--explain", action="store_true")        # prints dataset report + pipeline summary
+    ap.add_argument("--show-n", type=int, default=0,         # preview first N matched names
+                    help="print first N matched candidate names")
+    ap.add_argument("--export-json", default=None,           # export matched docs to a file
+                    help="write matched docs to a JSON file")
     args = ap.parse_args()
 
     raw = fetch_json(args.url)
@@ -57,12 +60,16 @@ def main():
     docs = [to_doc(c) for c in filtered]
     if args.explain:
         print(f"\nMatched {len(filtered)} candidates "
-        f"(industry={args.industry!r}, skills={args.skills!r}, min_years={args.min_years})")
+              f"(industry={args.industry!r}, skills={args.skills!r}, min_years={args.min_years})")
 
-    # preview top N matches
     if args.show_n and args.show_n > 0:
         for c in filtered[: args.show_n]:
             print(c.get("name", "Unknown"))
+            
+    if args.export_json:
+        import json, pathlib
+        pathlib.Path(args.export_json).write_text(json.dumps(docs, indent=2))
+        print(f"Wrote {len(docs)} docs to {args.export_json}")
 
     if args.dry_run:
         print(f"would insert {len(docs)} candidates matching filters.")
@@ -71,7 +78,9 @@ def main():
     client = connect(args.mongo)
     db = client["assignment"]
     insert_filtered(db, docs)
-    print(f"inserted {len(docs)} docs into assignment.filtered_candidates.")
+    n = len(docs)
+    word = "doc" if n == 1 else "docs"
+    print(f"Inserted {n} {word} into assignment.filtered_candidates.")
 
 if __name__ == "__main__":
     main()
