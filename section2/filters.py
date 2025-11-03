@@ -7,7 +7,9 @@ def by_industry(cands: List[Candidate], industry: Optional[str]) -> List[Candida
     if not industry:
         return cands
     needle = industry.strip().lower()
+    #substring match against normalized industries
     return [c for c in cands if any(needle in ind for ind in industries_of(c))]
+
 
 
 def by_skills_any(cands: List[Candidate], skills: Set[str]) -> List[Candidate]:
