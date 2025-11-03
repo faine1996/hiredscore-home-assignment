@@ -5,7 +5,7 @@ from typing import Any, List
 from common.http import fetch_json
 from common.types import Candidate
 from .parsing import normalize_candidate
-from .dates import parse_date, gap_days
+from .dates import parse_date, gap_days, inclusive_gap_days
 from .formatting import format_greeting, format_experience, format_gap
 
 DEFAULT_URL = "https://recruiting-test-resume-data.hiredscore.com/ps-dev-allcands-full-api_hub_b1f6.json"
@@ -15,10 +15,10 @@ def candidate_output(c: Candidate) -> str:
     exps = c.get("experiences") or []
     for idx, e in enumerate(exps):
         lines.append(format_experience(e))
-        if idx < len(exps)-1:
-            curr_end = parse_date(e.get("end_date"))
-            next_start = parse_date(exps[idx+1].get("start_date"))
-            g = gap_days(curr_end, next_start)
+        if idx < len(exps) - 1:
+            curr_start = parse_date(e.get("start_date"))      # newer job start
+            prev_end   = parse_date(exps[idx + 1].get("end_date"))  # older job end
+            g = inclusive_gap_days(prev_end, curr_start)
             if g > 0:
                 lines.append(format_gap(g))
     return "\n".join(lines)

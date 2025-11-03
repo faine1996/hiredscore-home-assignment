@@ -49,3 +49,10 @@ def gap_days(prev_end: Optional[date], next_start: Optional[date]) -> int:
     delta = (prev_end - next_start).days
     # we compare in Section 1 after sorting by end desc; adjust sign properly
     return max(0, (next_start - prev_end).days)
+
+
+def inclusive_gap_days(prev_end: Optional[date], next_start: Optional[date]) -> int:
+    if not prev_end or not next_start:
+        return 0
+    # treat employment dates as inclusive
+    return max(0, (next_start - prev_end).days - 1)
